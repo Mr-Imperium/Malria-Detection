@@ -1,0 +1,8 @@
+# requirements.txt
+tensorflow
+numpy
+scikit-learn
+matplotlib
+Pillow
+imutils
+streamlit
