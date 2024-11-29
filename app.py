@@ -1,11 +1,7 @@
 import streamlit as st
-import numpy as np
 import tensorflow as tf
 from PIL import Image
-import cv2
-import sys
-import traceback
-
+import numpy as np
 
 # Load the pre-trained model
 @st.cache_resource
@@ -14,63 +10,82 @@ def load_model():
     model = tf.keras.models.load_model(model_path)
     return model
 
-# Preprocess image for prediction
+# Preprocess the image
 def preprocess_image(image):
     # Resize image to match training input size
-    img_resized = cv2.resize(np.array(image), (64, 64))
-    
-    # Normalize pixel values
-    img_normalized = img_resized / 255.0
-    
-    # Add batch dimension
-    img_preprocessed = np.expand_dims(img_normalized, axis=0)
-    
-    return img_preprocessed
+    img = image.resize((64, 64))
+    img_array = np.array(img) / 255.0  # Normalize
+    img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+    return img_array
 
-# Main Streamlit app
+# Prediction function
+def predict_malaria(image, model):
+    processed_image = preprocess_image(image)
+    prediction = model.predict(processed_image)
+    class_names = ['Parasitized', 'Uninfected']
+    predicted_class = class_names[np.argmax(prediction)]
+    confidence = np.max(prediction) * 100
+    return predicted_class, confidence
+
 def main():
-    st.title('Malaria Cell Detection')
-    st.write('Upload a cell image to detect if it is parasitized or uninfected.')
+    st.title('Malaria Cell Image Detection')
+    
+    # Sidebar for model information
+    st.sidebar.header('Model Information')
+    st.sidebar.write('ResNet-based Malaria Detection Model')
+    st.sidebar.write('Input: Cell Microscopic Images')
+    st.sidebar.write('Output: Malaria Infection Status')
+
+    # Load model
+    try:
+        model = load_model()
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return
 
     # File uploader
     uploaded_file = st.file_uploader(
-        "Choose a cell image...", 
-        type=["jpg", "jpeg", "png"]
+        "Upload a cell microscopic image", 
+        type=['png', 'jpg', 'jpeg']
     )
 
     if uploaded_file is not None:
         # Display uploaded image
         image = Image.open(uploaded_file)
-        st.image(image, caption='Uploaded Cell Image', use_column_width=True)
+        st.image(image, caption='Uploaded Image', width=300)
 
-        # Load model
-        try:
-            model = load_model()
-        except Exception as e:
-            st.error(f"Error loading model: {e}")
-            return
+        # Make prediction
+        if st.button('Detect Malaria'):
+            try:
+                # Predict
+                predicted_class, confidence = predict_malaria(image, model)
+                
+                # Display results
+                st.subheader('Prediction Results')
+                st.write(f'Predicted Class: {predicted_class}')
+                st.write(f'Confidence: {confidence:.2f}%')
 
-        # Preprocess image
-        preprocessed_image = preprocess_image(image)
+                # Visualization of prediction
+                if predicted_class == 'Parasitized':
+                    st.warning('⚠️ Malaria Parasite Detected')
+                else:
+                    st.success('✅ No Malaria Parasite Detected')
 
-        # Predict
-        prediction = model.predict(preprocessed_image)
-        predicted_class = np.argmax(prediction, axis=1)[0]
-        confidence = prediction[0][predicted_class] * 100
+            except Exception as e:
+                st.error(f"Error making prediction: {e}")
 
-        # Map prediction to class names
-        class_names = ['Parasitized', 'Uninfected']
-        result = class_names[predicted_class]
+    # Additional information
+    st.markdown("""
+    ### How to Use
+    1. Upload a microscopic cell image
+    2. Click 'Detect Malaria'
+    3. View the prediction result
+    
+    ### About the Model
+    - Trained on cell microscopic images
+    - Uses ResNet architecture
+    - Classifies images as Parasitized or Uninfected
+    """)
 
-        # Display results
-        st.write(f"Prediction: {result}")
-        st.write(f"Confidence: {confidence:.2f}%")
-
-        # Visualization of prediction probabilities
-        st.bar_chart({
-            'Parasitized': prediction[0][0],
-            'Uninfected': prediction[0][1]
-        })
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
