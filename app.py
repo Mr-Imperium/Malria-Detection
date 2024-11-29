@@ -6,23 +6,7 @@ import cv2
 import sys
 import traceback
 
-def debug_streamlit_app():
-    try:
-        import streamlit as st
-        import tensorflow as tf
-        
-        # Check TensorFlow and model loading
-        print("TensorFlow version:", tf.__version__)
-        model_path = 'malaria_detection_model.keras'
-        model = tf.keras.models.load_model(model_path)
-        print("Model successfully loaded")
-    except Exception as e:
-        print("Error details:")
-        print(traceback.format_exc())
-        sys.exit(1)
 
-if __name__ == "__main__":
-    debug_streamlit_app()
 # Load the pre-trained model
 @st.cache_resource
 def load_model():
