@@ -68,6 +68,3 @@ streamlit run app.py
 
 ## License
 [MIT]
-
-summary:
-Developed a deep learning ResNet model for automated malaria cell detection using TensorFlow, achieving high accuracy in binary classification of microscopic blood cell images. Implemented end-to-end machine learning pipeline including data preprocessing, augmentation, model training, and web deployment with Streamlit. Demonstrated expertise in medical image classification, neural network architecture design, and practical AI application development.
